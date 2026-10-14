@@ -180,6 +180,10 @@ section.in::before{transform:scaleX(1)}
 .contact .btn{transition:border-color .15s,background .15s,translate .25s cubic-bezier(.2,.8,.2,1)}
 .contact .btn.p{position:relative}
 
+
+/* background animasi section contact */
+#flow{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;-webkit-mask-image:linear-gradient(180deg,transparent,#000 28%);mask-image:linear-gradient(180deg,transparent,#000 28%)}
+
 /* ===== bagian yang bergerak (dimatikan kalau pengguna pilih reduced motion) ===== */
 @media(prefers-reduced-motion:no-preference){
   .w i{transform:translateY(115%);transition:transform .9s cubic-bezier(.2,.8,.2,1) calc(var(--i)*80ms + 200ms)}
@@ -280,7 +284,7 @@ section.in::before{transform:scaleX(1)}
     </ol>
   </div></section>
 
-  <section id="contact" class="contact"><div class="wrap">
+  <section id="contact" class="contact"><canvas id="flow" aria-hidden="true"></canvas><div class="wrap">
     <h2>Have a project in mind?</h2>
     <p class="lead">Send a short description of what you need. Replies usually come within a day.</p>
     <div class="btns">
@@ -407,6 +411,49 @@ if(rm)draw();else requestAnimationFrame(draw);
   });
 })();
 
+
+// background contact: partikel naik + gelombang tipis
+(()=>{
+  const sec=$('#contact'),cv=$('#flow');if(!sec||!cv)return;
+  const c=cv.getContext('2d');let W,H,P=[],vis=false,mx=-999,my=-999,t=0;
+  function size(){
+    const r=cv.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);
+    W=r.width;H=r.height;cv.width=W*d;cv.height=H*d;c.setTransform(d,0,0,d,0,0);
+    const n=Math.round(Math.min(70,Math.max(24,W*H/14000)));
+    P=Array.from({length:n},()=>mk(true));
+  }
+  function mk(any){return{x:Math.random()*W,y:any?Math.random()*H:H+10,r:Math.random()*2+.9,v:Math.random()*.4+.2,ph:Math.random()*6.3,a:Math.random()*.4+.55}}
+  function waves(){
+    for(let k=0;k<3;k++){
+      c.beginPath();
+      for(let x=0;x<=W;x+=12){
+        const y=H*(.82+k*.07)+Math.sin(x/(150+k*60)+t*(.6+k*.25)+k*2)*(14+k*6);
+        x?c.lineTo(x,y):c.moveTo(x,y);
+      }
+      c.strokeStyle=`rgba(23,214,163,${.32-k*.08})`;c.lineWidth=1;c.stroke();
+    }
+  }
+  function frame(){
+    if(!vis)return;
+    t+=.012;c.clearRect(0,0,W,H);waves();
+    for(const p of P){
+      p.y-=p.v;p.x+=Math.sin(t*2+p.ph)*.25;
+      const dx=p.x-mx,dy=p.y-my,d=Math.hypot(dx,dy);
+      if(d<110&&d>0){p.x+=dx/d*1.4;p.y+=dy/d*1.4}
+      if(p.y<-10){Object.assign(p,mk(false))}
+      const fade=Math.min(1,(H-p.y)/(H*.25),p.y/(H*.2));
+      c.fillStyle=`rgba(23,214,163,${p.a*Math.max(fade,0)})`;
+      c.beginPath();c.arc(p.x,p.y,p.r,0,6.3);c.fill();
+    }
+    if(!rm)requestAnimationFrame(frame);
+  }
+  size();addEventListener('resize',size);
+  if(fine&&!rm){
+    sec.addEventListener('pointermove',e=>{const r=cv.getBoundingClientRect();mx=e.clientX-r.left;my=e.clientY-r.top});
+    sec.addEventListener('pointerleave',()=>{mx=my=-999});
+  }
+  new IntersectionObserver(es=>{const was=vis;vis=es[0].isIntersecting;if(vis&&!was)requestAnimationFrame(frame)}).observe(sec);
+})();
 </script>
 </body>
 </html>
