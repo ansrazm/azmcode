@@ -199,7 +199,7 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
     <p class="lead">Send a short description of what you need. Replies usually come within a day.</p>
     <div class="btns">
       <a class="btn p" href="https://www.upwork.com/freelancers/~01ac1f73414b5d58a9" target="_blank" rel="noopener">Hire on Upwork</a>
-      <a class="btn" href="https://wa.me/WA_NUMBER_HERE?text=Hi%20Azzam%2C%20I%20found%20you%20via%20azmcode.%20I%27d%20like%20to%20discuss%20a%20project." target="_blank" rel="noopener">WhatsApp</a>
+      <a class="btn" href="https://wa.me/6289531301164?text=Hi%20Azzam%2C%20I%20found%20you%20via%20azmcode.%20I%27d%20like%20to%20discuss%20a%20project." target="_blank" rel="noopener">WhatsApp</a>
       <a class="btn" href="mailto:ansrazm7@gmail.com?subject=Project%20inquiry%20via%20azmcode">Email</a>
       <a class="btn" href="https://id.linkedin.com/in/muhammad-azzam-anshori" target="_blank" rel="noopener">LinkedIn</a>
       <a class="btn" href="https://github.com/ansrazm" target="_blank" rel="noopener">GitHub</a>
@@ -218,15 +218,15 @@ const rm=matchMedia('(prefers-reduced-motion:reduce)').matches,fine=matchMedia('
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const ms=u=>'https://s0.wp.com/mshots/v1/'+encodeURIComponent(u)+'?w=900&h=560';
 const SVC=[
-['Websites and online stores','Custom PHP and WordPress/WooCommerce sites with member dashboards, checkout, and payment gateway integration such as Duitku.',['PHP','MySQL','WordPress','WooCommerce','Duitku','Member dashboards']],
-['Web apps','Node.js and React tools: inventory dashboards, quiz and exam systems, and admin panels with a REST API behind them.',['Node.js','Express','React','REST API','Vercel']],
+['Websites and online stores','Custom sites and stores on WordPress/WooCommerce or Cloudflare Workers, with member dashboards, checkout, and payment gateways such as Tripay and Duitku.',['WordPress','WooCommerce','PHP','Cloudflare Workers','Tripay','Duitku','Member dashboards']],
+['Web apps','Node.js and React tools: inventory dashboards, online exam systems, and admin panels with a REST API behind them.',['Node.js','Express','React','REST API','Vercel','Google Apps Script']],
 ['Security assessments','An OWASP Top 10 review of your web application, delivered as a written list of findings with how to fix each one.',['OWASP Top 10','NIST framework','Vulnerability reports','Linux hardening']],
 ['Machine learning','Classification models with explainable results (SHAP), validated on real data instead of benchmark scores alone.',['Python','Scikit-Learn','XGBoost','SHAP','Pandas']]];
 const PRJ=[
-{t:'web',w:1,n:'Dragon Store',d:'Game top-up and character store for Point Blank, with member dashboard, deposit flow, order and invoice flow, and Duitku payments.',g:['PHP','Payments','Dashboard'],u:'https://demostore.azmcode.workers.dev',s:ms('https://demostore.azmcode.workers.dev'),a:'Open the live demo'},
+{t:'web',w:1,n:'Dragon Store',d:'Game top-up and in-game item store on Cloudflare Workers and D1. Member accounts with wallet balance and VIP pricing, flash sales, Google login, Tripay and Duitku payments, automatic order fulfilment through Digiflazz, and an admin panel with image uploads.',g:['Cloudflare Workers','D1','Payments'],u:'https://demostore.azmcode.workers.dev',s:ms('https://demostore.azmcode.workers.dev'),a:'Open the live demo'},
 {t:'web',n:'BUMDes Langgam Sako',d:'Batik tenun online store for a village-owned enterprise in Bengkalis, with direct WhatsApp ordering.',g:['WordPress','WooCommerce'],u:'https://bumdeslanggamsako.com',s:ms('https://bumdeslanggamsako.com'),a:'Visit the site'},
 {t:'app',n:'Inventory Dashboard',d:'Node.js/Express API and React frontend: product CRUD, stock adjustments, transactions and live stats.',g:['React','Node.js','REST API'],u:'https://github.com/ansrazm/node-react-demo',s:'https://opengraph.githubassets.com/1/ansrazm/node-react-demo',a:'View the source'},
-{t:'app',n:'Quiz UTS Nirlaba',d:'Web quiz application with separate quiz and admin interfaces, deployed on Vercel.',g:['JavaScript','Vercel'],u:'https://uts-nirlaba.vercel.app',s:ms('https://uts-nirlaba.vercel.app'),a:'Open the live demo'},
+{t:'app',n:'Online Exam Platform',d:'Exam portal for institutions: sessions open and close on a schedule, participants check in with name and ID, leaving the page is logged and locks the session after a set limit, and a supervisor dashboard offers per-exam controls and CSV export.',g:['JavaScript','Apps Script','Vercel'],u:'https://ujian-unri.vercel.app',s:ms('https://ujian-unri.vercel.app'),a:'Open the live demo'},
 {t:'research',n:'Explainable DDoS detection',d:'Published in JOSAPEN 2026. XGBoost vs Random Forest on CIC-DDoS2019, then tested on a physical network where false positives still appeared.',g:['XGBoost','SHAP','Python'],u:'https://journal.lenterailmu.com/index.php/josapen/article/view/131',s:ms('https://journal.lenterailmu.com/index.php/josapen/article/view/131'),a:'Read the paper'}];
 // services accordion
 $('#svc').innerHTML=SVC.map((s,i)=>`<button aria-expanded="false" aria-controls="m${i}"><h3>${s[0]}</h3><p>${s[1]}</p><span class="pl">+</span></button><div class="more" id="m${i}"><div>${s[2].map(x=>`<span>${x}</span>`).join('')}</div></div>`).join('');
