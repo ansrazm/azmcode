@@ -136,8 +136,8 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
 .sg{grid-template-columns:1fr 1fr}.steps{grid-template-columns:1fr 1fr;row-gap:40px}.nav nav{gap:16px}.nav nav a:nth-child(n+3){display:none}
 }
 @media(max-width:480px){.steps{grid-template-columns:1fr}}
-/* ===== ANIMASI BAGIAN BAWAH =====
-   Tempel tepat SEBELUM </style> (setelah semua CSS yang sudah ada) */
+
+/* animasi bawah */
 
 /* garis pembuka tiap section menyala dari tengah */
 section{position:relative}
@@ -355,8 +355,8 @@ $('#hero').addEventListener('pointermove',e=>{const r=cv.getBoundingClientRect()
 $('#hero').addEventListener('pointerleave',()=>{m.x=m.y=-999});
 new IntersectionObserver(es=>{on=es[0].isIntersecting}).observe($('#hero'));
 if(rm)draw();else requestAnimationFrame(draw);  
-/* ===== ANIMASI BAGIAN BAWAH =====
-   Tempel tepat SEBELUM </script> (paling akhir, setelah kode yang sudah ada) */
+
+// animasi bawah
 (()=>{
   // judul section dipecah per kata
   $$('section h2').forEach(h=>{
