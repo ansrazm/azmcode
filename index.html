@@ -232,6 +232,7 @@ section.in::before{transform:scaleX(1)}
 #cw{position:fixed;left:16px;bottom:16px;z-index:55;width:236px;background:rgba(14,19,22,.86);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:14px;opacity:0;transform:translateY(14px);pointer-events:none;transition:opacity .5s,transform .5s,border-color .15s}
 #cw.show{opacity:1;transform:none;pointer-events:auto}
 #cw:hover{border-color:var(--mint)}
+#cw{cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none}#cw.drag{cursor:grabbing;transition:none}#cw a{cursor:inherit;-webkit-user-drag:none}#cw img{-webkit-user-drag:none}
 #cw a{display:block;padding:8px;text-decoration:none;color:var(--text)}
 #cw .pv{display:block;position:relative;aspect-ratio:16/10;border-radius:8px;overflow:hidden;background:#0A0F12;border:1px solid var(--line)}
 #cw .pv em{position:absolute;inset:0;display:grid;place-items:center;font:700 34px 'Outfit',sans-serif;color:#1d262b;font-style:normal}
@@ -259,7 +260,7 @@ footer{padding-bottom:84px}
   <button id="musBtn" type="button" aria-pressed="false" aria-label="Theme music"><span class="eq" aria-hidden="true"><i></i><i></i><i></i></span><span class="lb">Music</span></button>
 </div>
 
-<aside id="cw" aria-label="Currently working on"><a href="https://dragonstorepb.com" target="_blank" rel="noopener"><span class="pv"><em>D</em><img loading="lazy" src="https://s0.wp.com/mshots/v1/https%3A%2F%2Fdragonstorepb.com?w=500&amp;h=312" alt="Preview of Dragon Store" onerror="this.remove()"></span><span class="row"><span class="dot" aria-hidden="true"></span><span class="tx"><small>Currently working on</small><b>Dragon Store <span aria-hidden="true">↗</span></b></span></span></a><button type="button" id="cwx" aria-label="Dismiss">×</button></aside>
+<aside id="cw" aria-label="Currently working on"><a href="https://dragonstorepb.com" target="_blank" rel="noopener" draggable="false"><span class="pv"><em>D</em><img draggable="false" loading="lazy" src="https://s0.wp.com/mshots/v1/https%3A%2F%2Fdragonstorepb.com?w=500&amp;h=312" alt="Preview of Dragon Store" onerror="this.remove()"></span><span class="row"><span class="dot" aria-hidden="true"></span><span class="tx"><small>Currently working on</small><b>Dragon Store <span aria-hidden="true">↗</span></b></span></span></a><button type="button" id="cwx" aria-label="Dismiss">×</button></aside>
 
 <header>
   <div class="nav">
@@ -496,6 +497,15 @@ setTimeout(()=>{ready=true;upd()},1800);
 if('IntersectionObserver' in window){const io=new IntersectionObserver(es=>{es.forEach(e=>e.isIntersecting?busy.add(e.target):busy.delete(e.target));upd()});
 document.querySelectorAll('#contact,footer').forEach(el=>io.observe(el))}
 document.getElementById('cwx').onclick=()=>{closed=true;upd();setTimeout(()=>c.remove(),500);try{sessionStorage.setItem('cwx','1')}catch(e){}};
+
+const place=(x,y)=>{const m=8,w=c.offsetWidth,h=c.offsetHeight;x=Math.max(m,Math.min(innerWidth-w-m,x));y=Math.max(m,Math.min(innerHeight-h-m,y));c.style.left=x+'px';c.style.top=y+'px';c.style.bottom='auto'};
+let sx=0,sy=0,ox=0,oy=0,down=false,moved=false;
+c.addEventListener('pointerdown',e=>{if(e.target.closest('#cwx')||(e.pointerType==='mouse'&&e.button!==0))return;const r=c.getBoundingClientRect();down=true;moved=false;sx=e.clientX;sy=e.clientY;ox=r.left;oy=r.top});
+addEventListener('pointermove',e=>{if(!down)return;const dx=e.clientX-sx,dy=e.clientY-sy;if(!moved){if(Math.hypot(dx,dy)<6)return;moved=true;c.classList.add('drag');try{c.setPointerCapture(e.pointerId)}catch(_){}}place(ox+dx,oy+dy)});
+const end=()=>{if(!down)return;down=false;c.classList.remove('drag')};
+addEventListener('pointerup',end);addEventListener('pointercancel',end);
+c.addEventListener('click',e=>{if(moved){e.preventDefault();e.stopPropagation();moved=false}},true);
+addEventListener('resize',()=>{if(c.style.top)place(c.offsetLeft,c.offsetTop)});
 })();
 </script>
 <script src="sound.js"></script>
