@@ -232,7 +232,7 @@ section.in::before{transform:scaleX(1)}
 #cw{position:fixed;left:16px;bottom:16px;z-index:55;width:236px;background:rgba(14,19,22,.86);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:14px;opacity:0;transform:translateY(14px);pointer-events:none;transition:opacity .5s,transform .5s,border-color .15s}
 #cw.show{opacity:1;transform:none;pointer-events:auto}
 #cw:hover{border-color:var(--mint)}
-#cw{cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none}#cw.drag{cursor:grabbing;transition:none}#cw a{cursor:inherit;-webkit-user-drag:none}#cw img{-webkit-user-drag:none}
+#cw{cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none}#cw.drag{cursor:grabbing;transition:none}#cw{transform-origin:50% 50%;scale:var(--s,1);rotate:var(--r,0rad)}#cw.mv{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(14,19,22,.96)}#cw a{cursor:inherit;-webkit-user-drag:none}#cw img{-webkit-user-drag:none}
 #cw a{display:block;padding:8px;text-decoration:none;color:var(--text)}
 #cw .pv{display:block;position:relative;aspect-ratio:16/10;border-radius:8px;overflow:hidden;background:#0A0F12;border:1px solid var(--line)}
 #cw .pv em{position:absolute;inset:0;display:grid;place-items:center;font:700 34px 'Outfit',sans-serif;color:#1d262b;font-style:normal}
@@ -492,20 +492,131 @@ $$('main section').forEach(sec=>{
 let gone=false;try{gone=sessionStorage.getItem('cwx')==='1'}catch(e){}
 if(gone){c.remove();return}
 let ready=false,closed=false;const busy=new Set();
-const upd=()=>c.classList.toggle('show',ready&&!closed&&!busy.size);
+const upd=()=>{c.classList.toggle('show',ready&&!closed&&!busy.size);if(c.classList.contains('show')&&fv&&!raf)loop()};
 setTimeout(()=>{ready=true;upd()},1800);
 if('IntersectionObserver' in window){const io=new IntersectionObserver(es=>{es.forEach(e=>e.isIntersecting?busy.add(e.target):busy.delete(e.target));upd()});
 document.querySelectorAll('#contact,footer').forEach(el=>io.observe(el))}
-document.getElementById('cwx').onclick=()=>{closed=true;upd();setTimeout(()=>c.remove(),500);try{sessionStorage.setItem('cwx','1')}catch(e){}};
+document.getElementById('cwx').onclick=()=>{closed=true;stop();upd();setTimeout(()=>c.remove(),500);try{sessionStorage.setItem('cwx','1')}catch(e){}};
 
-const place=(x,y)=>{const m=8,w=c.offsetWidth,h=c.offsetHeight;x=Math.max(m,Math.min(innerWidth-w-m,x));y=Math.max(m,Math.min(innerHeight-h-m,y));c.style.left=x+'px';c.style.top=y+'px';c.style.bottom='auto'};
-let sx=0,sy=0,ox=0,oy=0,down=false,moved=false;
-c.addEventListener('pointerdown',e=>{if(e.target.closest('#cwx')||(e.pointerType==='mouse'&&e.button!==0))return;const r=c.getBoundingClientRect();down=true;moved=false;sx=e.clientX;sy=e.clientY;ox=r.left;oy=r.top});
-addEventListener('pointermove',e=>{if(!down)return;const dx=e.clientX-sx,dy=e.clientY-sy;if(!moved){if(Math.hypot(dx,dy)<6)return;moved=true;c.classList.add('drag');try{c.setPointerCapture(e.pointerId)}catch(_){}}place(ox+dx,oy+dy)});
-const end=()=>{if(!down)return;down=false;c.classList.remove('drag')};
-addEventListener('pointerup',end);addEventListener('pointercancel',end);
-c.addEventListener('click',e=>{if(moved){e.preventDefault();e.stopPropagation();moved=false}},true);
-addEventListener('resize',()=>{if(c.style.top)place(c.offsetLeft,c.offsetTop)});
+/* drag, fling + bounce, pinch (zoom + rotate) */
+const sfx=(n,a)=>{window.azmSfx&&window.azmSfx(n,a)};
+const rm=matchMedia('(prefers-reduced-motion:reduce)').matches;
+const M=8,SMIN=.6,SMAX=1.8,NOW=-1e9,VC=.45; // VC = kecepatan jelajah maks (px/ms) saat ngambang
+let sc=1,rot=0,cx=0,cy=0,raf=0,lz=1,lr=0,om=0,omT=NOW,fv=null,pinned=false,lastB=0;
+const W0=()=>c.offsetWidth,H0=()=>c.offsetHeight;
+const ext=()=>{const w=W0()*sc,h=H0()*sc,k=Math.abs(Math.cos(rot)),n=Math.abs(Math.sin(rot));return[(w*k+h*n)/2,(w*n+h*k)/2]};
+const clampS=v=>{const k=Math.abs(Math.cos(rot)),n=Math.abs(Math.sin(rot));return Math.max(SMIN,Math.min(SMAX,v,(innerWidth-2*M)/(W0()*k+H0()*n),(innerHeight-2*M)/(W0()*n+H0()*k)))};
+const sync=()=>{const r=c.getBoundingClientRect();cx=r.left+r.width/2;cy=r.top+r.height/2};
+const put=(x,y)=>{const[a,b]=ext();cx=Math.max(M+a,Math.min(innerWidth-M-a,x));cy=Math.max(M+b,Math.min(innerHeight-M-b,y));if(!pinned){pinned=true;c.style.left='0';c.style.top='0';c.style.bottom='auto'}c.style.translate=(cx-W0()/2)+'px '+(cy-H0()/2)+'px'};
+const setS=v=>{sc=v;c.style.setProperty('--s',v)};
+const setR=v=>{rot=v;c.style.setProperty('--r',v+'rad')};
+const zsfx=()=>{if(Math.abs(sc-lz)>.07){lz=sc;sfx('zoom',sc)}};
+const rsfx=()=>{const q=Math.round(rot/(Math.PI/12));if(q!==lr){lr=q;sfx('detent')}};
+const stop=()=>{if(raf){cancelAnimationFrame(raf);raf=0}fv=null;c.classList.remove('mv')};
+
+const pts=new Map();
+let mode=0,moved=false,nolink=false,sx=0,sy=0,ox=0,oy=0,s0=1,d0=1,m0x=0,m0y=0,cx0=0,cy0=0,rot0=0,ang=0,rotG=0,trk=[],rtk=[];
+
+const startPinch=t=>{sync();moved=true;mode=2;const[a,b]=[...pts.values()];
+  s0=sc;rot0=rot;rotG=0;d0=Math.max(1,Math.hypot(a.x-b.x,a.y-b.y));ang=Math.atan2(b.y-a.y,b.x-a.x);
+  m0x=(a.x+b.x)/2;m0y=(a.y+b.y)/2;cx0=cx;cy0=cy;rtk=[{t,r:rot}];
+  c.classList.add('drag','mv');pts.forEach((_,id)=>{try{c.setPointerCapture(id)}catch(_){}});sfx('pick')};
+
+c.addEventListener('pointerdown',e=>{
+  if(e.target.closest('#cwx')||(e.pointerType==='mouse'&&e.button!==0))return;
+  const flying=!!raf;stop();pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(pts.size===1){sync();moved=false;nolink=flying;sx=e.clientX;sy=e.clientY;ox=cx;oy=cy;om=0;omT=NOW;trk=[{t:e.timeStamp,x:e.clientX,y:e.clientY}];mode=1}
+  else if(pts.size===2)startPinch(e.timeStamp);
+});
+
+addEventListener('pointermove',e=>{
+  const p=pts.get(e.pointerId);if(!p)return;p.x=e.clientX;p.y=e.clientY;
+  if(mode===2&&pts.size>=2){
+    const[a,b]=[...pts.values()],d=Math.hypot(a.x-b.x,a.y-b.y),mx=(a.x+b.x)/2,my=(a.y+b.y)/2,an=Math.atan2(b.y-a.y,b.x-a.x);
+    let da=an-ang;da=Math.atan2(Math.sin(da),Math.cos(da));ang=an;rotG+=da;
+    const r=rot0+rotG;setR(r);const v=clampS(s0*d/d0);setS(v);
+    // titik kartu yang tadi di bawah jari tengah harus tetap di bawah jari tengah
+    const vx0=m0x-cx0,vy0=m0y-cy0,c0=Math.cos(rot0),n0=Math.sin(rot0),lx=(vx0*c0+vy0*n0)/s0,ly=(-vx0*n0+vy0*c0)/s0,c1=Math.cos(r),n1=Math.sin(r);
+    put(mx-(lx*c1-ly*n1)*v,my-(lx*n1+ly*c1)*v);zsfx();rsfx();
+    rtk.push({t:e.timeStamp,r});while(rtk.length>1&&e.timeStamp-rtk[0].t>100)rtk.shift();
+  }else if(mode===1){
+    const dx=e.clientX-sx,dy=e.clientY-sy;
+    if(!moved){if(Math.hypot(dx,dy)<6)return;moved=true;c.classList.add('drag','mv');try{c.setPointerCapture(e.pointerId)}catch(_){}sfx('pick')}
+    put(ox+dx,oy+dy);
+    trk.push({t:e.timeStamp,x:e.clientX,y:e.clientY});
+    while(trk.length>1&&e.timeStamp-trk[0].t>100)trk.shift();
+  }
+});
+
+const fling=(vx,vy,w)=>{fv={vx,vy,w};loop()};
+/* anti-gravity: ngambang di ruang hampa. Gesekan sangat kecil jadi melambat pelan-pelan, tapi ga pernah di bawah VMIN (terus hanyut) dan ga pernah berhenti muter (WMIN).
+   Tiap mantul sedikit kehilangan tenaga (E) dan kena pukulan putar dari dinding, jadi makin lama keputar2 sendiri. Jeda otomatis kalau card disembunyikan / tab ga aktif. */
+const E=.94,VMIN=.05,WMAX=.0035,WMIN=.0005,KS=.004,KJ=.0025,WD=.00008,DR=.00015;
+const loop=()=>{
+  if(raf||!fv)return;c.classList.add('mv');let last=performance.now();
+  const step=t=>{
+    if(!fv||!c.classList.contains('show')){raf=0;if(!fv)c.classList.remove('mv');return}
+    const dt=Math.min(32,t-last);last=t;
+    let{vx,vy,w}=fv;
+    const[a,b]=ext(),x0=M+a,x1=innerWidth-M-a,y0=M+b,y1=innerHeight-M-b;
+    let x=cx+vx*dt,y=cy+vy*dt,hit=0;
+    if(x<x0){x=x0;if(vx<0){hit=Math.max(hit,-vx);w+=KS*vy;vx=-vx*E}}
+    else if(x>x1){x=x1;if(vx>0){hit=Math.max(hit,vx);w-=KS*vy;vx=-vx*E}}
+    if(y<y0){y=y0;if(vy<0){hit=Math.max(hit,-vy);w-=KS*vx;vy=-vy*E}}
+    else if(y>y1){y=y1;if(vy>0){hit=Math.max(hit,vy);w+=KS*vx;vy=-vy*E}}
+    if(hit)w+=(Math.random()-.5)*KJ*Math.min(Math.max(hit,.3),2);
+    w=Math.max(-WMAX,Math.min(WMAX,w*Math.exp(-dt*WD)));
+    if(Math.abs(w)<WMIN)w=(w<0?-1:1)*WMIN;
+    setR(rot+w*dt);
+    put(x,y);
+    if(hit>.15&&t-lastB>200){lastB=t;sfx('bounce',hit)}
+    const sp=Math.hypot(vx,vy);
+    if(sp>0){const k=Math.max(VMIN,sp*Math.exp(-dt*(DR+(sp>.6?.002:0))))/sp;vx*=k;vy*=k}
+    fv.vx=vx;fv.vy=vy;fv.w=w;
+    raf=requestAnimationFrame(step);
+  };
+  raf=requestAnimationFrame(step);
+};
+
+const release=e=>{
+  let vx=0,vy=0;const n=trk.length;
+  if(!rm&&n>1&&e.timeStamp-trk[n-1].t<=80){const a=trk[0],b=trk[n-1],dt=b.t-a.t;if(dt>=4){vx=(b.x-a.x)/dt;vy=(b.y-a.y)/dt}}
+  let sp=Math.hypot(vx,vy);if(sp<.08){vx=vy=0;sp=0}else if(sp>4){vx*=4/sp;vy*=4/sp}
+  const w=(!rm&&e.timeStamp-omT<250)?om:0;
+  if(sp===0&&Math.abs(w)<.0005){c.classList.remove('mv');sfx('drop');return}
+  fling(vx,vy,w);
+};
+
+const up=e=>{
+  if(!pts.has(e.pointerId))return;pts.delete(e.pointerId);
+  if(mode===2){
+    const n=rtk.length;om=0;
+    if(n>1){const dt=rtk[n-1].t-rtk[0].t;if(dt>=4&&e.timeStamp-rtk[n-1].t<80)om=Math.max(-.012,Math.min(.012,(rtk[n-1].r-rtk[0].r)/dt))}
+    omT=e.timeStamp;
+    if(pts.size===1){const[r]=[...pts.values()];sync();sx=r.x;sy=r.y;ox=cx;oy=cy;trk=[{t:e.timeStamp,x:r.x,y:r.y}];mode=1;return}
+    mode=0;c.classList.remove('drag');
+    if(!rm&&Math.abs(om)>=.0005)fling(0,0,om);else c.classList.remove('mv');
+    return;
+  }
+  if(mode===1&&pts.size===0){
+    mode=0;c.classList.remove('drag');
+    if(moved)release(e);
+  }
+};
+addEventListener('pointerup',up);addEventListener('pointercancel',up);
+
+c.addEventListener('click',e=>{if(moved||nolink){e.preventDefault();e.stopPropagation();moved=false;nolink=false}},true);
+
+/* desktop: trackpad pinch / Ctrl+scroll = zoom, Alt+scroll = rotate */
+c.addEventListener('wheel',e=>{
+  if(!e.ctrlKey&&!e.altKey)return;e.preventDefault();stop();sync();
+  const d=Math.max(-30,Math.min(30,e.deltaY||e.deltaX));
+  if(e.altKey&&!e.ctrlKey){setR(rot+d*.01);rsfx();put(cx,cy);return}
+  const v=clampS(sc*Math.exp(-d*.01));if(v===sc)return;
+  const k=v/sc;setS(v);put(e.clientX-(e.clientX-cx)*k,e.clientY-(e.clientY-cy)*k);zsfx();
+},{passive:false});
+
+addEventListener('resize',()=>{if(pinned){setS(clampS(sc));put(cx,cy)}});
 })();
 </script>
 <script src="sound.js"></script>

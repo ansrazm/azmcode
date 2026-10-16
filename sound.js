@@ -58,8 +58,19 @@
     chip(i){const t=ctx.currentTime;note(hz(72+i*2),t,.14,{type:'square',g:.1,dest:sfxBus,lp:1800});note(hz(79+i*2),t+.055,.16,{type:'triangle',g:.16,dest:sfxBus})},
     cta(){const t=ctx.currentTime;[hz(81),hz(88)].forEach((f,i)=>{note(f,t+i*.09,.55,{g:.2,dest:sfxBus});note(f*2,t+i*.09,.3,{g:.05,dest:sfxBus})})},
     on(){const t=ctx.currentTime;[69,76,81].forEach((n,i)=>note(hz(n),t+i*.07,.22,{type:'triangle',g:.2,dest:sfxBus}))},
-    off(){const t=ctx.currentTime;[81,76,69].forEach((n,i)=>note(hz(n),t+i*.07,.22,{type:'triangle',g:.18,dest:sfxBus}))}
+    off(){const t=ctx.currentTime;[81,76,69].forEach((n,i)=>note(hz(n),t+i*.07,.22,{type:'triangle',g:.18,dest:sfxBus}))},
+    detent(){const t=ctx.currentTime;note(hz(88),t,.035,{type:'square',g:.035,dest:sfxBus,lp:2400})},
+    pick(){const t=ctx.currentTime;note(hz(76),t,.07,{type:'triangle',g:.1,dest:sfxBus})},
+    drop(){const t=ctx.currentTime;note(hz(67),t,.1,{type:'triangle',g:.1,dest:sfxBus})},
+    zoom(s){const t=ctx.currentTime;note(hz(62+(s-.6)*10),t,.07,{type:'triangle',g:.08,dest:sfxBus,lp:2600})},
+    bounce(v){const t=ctx.currentTime,o=ctx.createOscillator(),e=ctx.createGain(),g=Math.min(.38,.04+v*.12);
+      o.type='sine';o.frequency.setValueAtTime(200+v*40,t);o.frequency.exponentialRampToValueAtTime(65,t+.13);
+      e.gain.setValueAtTime(.0001,t);e.gain.linearRampToValueAtTime(g,t+.005);e.gain.exponentialRampToValueAtTime(.0001,t+.17);
+      o.connect(e);e.connect(sfxBus);o.start(t);o.stop(t+.2)}
   };
+
+  // dipakai komponen lain di halaman (mis. kartu melayang)
+  window.azmSfx=(n,a)=>{if(st.sfx&&S[n]){ensure();S[n](a)}};
 
   document.addEventListener('click',e=>{
     if(!st.sfx)return;
