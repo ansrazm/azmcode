@@ -1,0 +1,16 @@
+/* ===== sound controls ===== */
+#snd{position:fixed;right:16px;bottom:16px;z-index:60;display:flex;gap:4px;padding:4px;background:rgba(14,19,22,.82);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:999px}
+#snd button{appearance:none;-webkit-appearance:none;background:none;border:0;margin:0;display:flex;align-items:center;gap:7px;height:34px;padding:0 13px;border-radius:999px;cursor:pointer;font:500 13px/1 'IBM Plex Sans',system-ui,sans-serif;color:var(--muted);transition:color .2s,background .2s}
+#snd button:hover{color:var(--text)}
+#snd button[aria-pressed="true"]{color:var(--mint);background:rgba(23,214,163,.12)}
+#snd svg{width:16px;height:16px;flex:none}
+#snd .waves{opacity:0;transition:opacity .2s}
+#snd button[aria-pressed="true"] .waves{opacity:1}
+#snd .eq{display:flex;align-items:flex-end;gap:2px;width:16px;height:14px;flex:none}
+#snd .eq i{flex:1;height:28%;background:currentColor;border-radius:1px}
+.mus-on #snd .eq i{animation:eq 1s ease-in-out infinite alternate}
+.mus-on #snd .eq i:nth-child(2){animation-delay:-.4s}
+.mus-on #snd .eq i:nth-child(3){animation-delay:-.7s}
+@keyframes eq{from{height:25%}to{height:100%}}
+@media (prefers-reduced-motion:reduce){.mus-on #snd .eq i{animation:none;height:70%}}
+@media (max-width:520px){#snd{right:12px;bottom:12px}#snd .lb{display:none}#snd button{padding:0 11px}}
