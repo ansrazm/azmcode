@@ -4,8 +4,8 @@
   const AC=window.AudioContext||window.webkitAudioContext;
   if(!AC){const w=q('#snd');if(w)w.remove();return}
 
-  // pengaturan tersimpan; default: semua mati (browser memblokir autoplay & tidak semua pengunjung mau bunyi)
-  const KEY='azm-audio',st={sfx:false,music:false};
+  // pengaturan tersimpan; default: semua nyala (musik baru bunyi setelah interaksi pertama karena autoplay diblokir browser)
+  const KEY='azm-audio',st={sfx:true,music:true};
   try{Object.assign(st,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){}
   const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}};
 
@@ -14,13 +14,13 @@
 
   function ensure(){
     if(!ctx){
-      ctx=new AC();
+      ctx=new AC({latencyHint:'playback'});
       const comp=ctx.createDynamicsCompressor();comp.connect(ctx.destination);
       const master=ctx.createGain();master.gain.value=.9;master.connect(comp);
       sfxBus=ctx.createGain();sfxBus.gain.value=.5;sfxBus.connect(master);
       musBus=ctx.createGain();musBus.gain.value=0;musBus.connect(master);
       // reverb (impuls noise yang meluruh)
-      const len=Math.floor(ctx.sampleRate*2.6),buf=ctx.createBuffer(2,len,ctx.sampleRate);
+      const len=Math.floor(ctx.sampleRate*1.8),buf=ctx.createBuffer(2,len,ctx.sampleRate);
       for(let c=0;c<2;c++){const d=buf.getChannelData(c);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3)}
       const conv=ctx.createConvolver();conv.buffer=buf;
       const wet=ctx.createGain();wet.gain.value=.5;conv.connect(wet);wet.connect(musBus);
@@ -95,12 +95,12 @@
     if(k%4===2&&Math.random()<.35)note(hz(PEN[Math.floor(Math.random()*PEN.length)]),t+.02,1.6,{g:.04,dest:musBus,sends:send});
   }
   function sched(){
-    if(next<ctx.currentTime-.2)next=ctx.currentTime+.05; // tab lama di background: jangan kejar ketinggalan
-    while(next<ctx.currentTime+.3){play(step,next);next+=SD;step++}
+    if(next<ctx.currentTime-.5)next=ctx.currentTime+.05; // tab lama di background: jangan kejar ketinggalan
+    while(next<ctx.currentTime+1.2){play(step,next);next+=SD;step++}
   }
   function startMusic(){
     ensure();if(timer)return;
-    step=0;next=ctx.currentTime+.08;sched();timer=setInterval(sched,90);
+    step=0;next=ctx.currentTime+.08;sched();timer=setInterval(sched,250);
     musBus.gain.cancelScheduledValues(ctx.currentTime);musBus.gain.setTargetAtTime(.6,ctx.currentTime,.8);
   }
   function stopMusic(){
@@ -127,7 +127,7 @@
 
   // pilihan musik "on" dari kunjungan sebelumnya baru bisa bunyi setelah interaksi pertama
   if(st.music){
-    const evs=['click','keydown','touchend'],go=()=>{
+    const evs=['click','keydown','touchend','pointerup'],go=()=>{
       evs.forEach(v=>removeEventListener(v,go,true));
       if(st.music)startMusic();
     };
