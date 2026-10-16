@@ -10,7 +10,7 @@
   const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}};
 
   let ctx,sfxBus,musBus,delayIn,verbIn,timer=null,step=0,next=0,nz=null,bn=-1;
-  const BN=[69,72,74,76,79,81]; // nada 'tuing': pentatonik A minor
+  const BN=[81,84,86,88,91,93]; // nada 'ding': pentatonik A minor, oktaf tinggi (A5 C6 D6 E6 G6 A6)
   const hz=n=>440*Math.pow(2,(n-69)/12);
 
   function ensure(){
@@ -64,36 +64,30 @@
     pick(){const t=ctx.currentTime;note(hz(76),t,.07,{type:'triangle',g:.1,dest:sfxBus})},
     drop(){const t=ctx.currentTime;note(hz(67),t,.1,{type:'triangle',g:.1,dest:sfxBus})},
     zoom(s){const t=ctx.currentTime;note(hz(62+(s-.6)*10),t,.07,{type:'triangle',g:.08,dest:sfxBus,lp:2600})},
-    // mantul = "tuing" pegas: nada nyentak naik (tu-) lalu meluncur turun ke nada akhir sambil bergetar (-ing), plus thump + klik kecil biar berbobot.
-    // Nada akhir diacak dari pentatonik A minor (nyambung sama musik), ga pernah sama 2x berturut-turut. Volume ikut kerasnya tabrakan, pan ikut posisi kartu.
-    bounce(v,pan){const t=ctx.currentTime,k=Math.min(v||0,2),g=Math.min(.8,.08+k*.5),d=.38+k*.14;
+    // mantul = "ding" bel/beling: nada murni + overtone tak-harmonik (kayak lonceng/gelas) yang meluruh bertingkat, ekor panjang, plus 'tink' kecil di awal.
+    // Nada diacak dari pentatonik A minor oktaf tinggi (nyambung sama musik), ga pernah sama 2x berturut-turut. Volume ikut kerasnya tabrakan, pan ikut posisi kartu.
+    bounce(v,pan){const t=ctx.currentTime,k=Math.min(v||0,2),g=Math.min(.7,.07+k*.45),d=.9+k*.35;
       let out=sfxBus;
       if(ctx.createStereoPanner){const p=ctx.createStereoPanner();p.pan.value=Math.max(-1,Math.min(1,(pan||0)*.7));p.connect(sfxBus);out=p}
       let i;do{i=Math.floor(Math.random()*BN.length)}while(i===bn&&BN.length>1);bn=i;const f=hz(BN[i]);
-      // badan nada: triangle + harmonik sine di atasnya
-      const o=ctx.createOscillator(),o2=ctx.createOscillator(),e=ctx.createGain(),e2=ctx.createGain();
-      o.type='triangle';o2.type='sine';
-      o.frequency.setValueAtTime(f*.62,t);o.frequency.exponentialRampToValueAtTime(f*1.55,t+.035);o.frequency.exponentialRampToValueAtTime(f,t+.16);
-      o2.frequency.setValueAtTime(f*1.24,t);o2.frequency.exponentialRampToValueAtTime(f*3.1,t+.035);o2.frequency.exponentialRampToValueAtTime(f*2,t+.16);
-      // getaran pegas (vibrato) yang meluruh
-      const lfo=ctx.createOscillator(),lg=ctx.createGain();
-      lfo.frequency.value=11;lg.gain.setValueAtTime(5,t);lg.gain.linearRampToValueAtTime(45,t+.1);lg.gain.linearRampToValueAtTime(0,t+d);
-      lfo.connect(lg);lg.connect(o.detune);lg.connect(o2.detune);
-      e.gain.setValueAtTime(.0001,t);e.gain.linearRampToValueAtTime(g,t+.006);e.gain.exponentialRampToValueAtTime(g*.35,t+.12);e.gain.exponentialRampToValueAtTime(.0001,t+d);
-      e2.gain.setValueAtTime(.0001,t);e2.gain.linearRampToValueAtTime(g*.28,t+.006);e2.gain.exponentialRampToValueAtTime(.0001,t+d*.55);
-      o.connect(e);o2.connect(e2);e.connect(out);e2.connect(out);
-      o.start(t);o2.start(t);lfo.start(t);o.stop(t+d+.05);o2.stop(t+d+.05);lfo.stop(t+d+.05);
-      // thump rendah: bobot tabrakan
-      const th=ctx.createOscillator(),te=ctx.createGain();
-      th.type='sine';th.frequency.setValueAtTime(170+k*40,t);th.frequency.exponentialRampToValueAtTime(60,t+.09);
-      te.gain.setValueAtTime(.0001,t);te.gain.linearRampToValueAtTime(g*.7,t+.004);te.gain.exponentialRampToValueAtTime(.0001,t+.12);
-      th.connect(te);te.connect(out);th.start(t);th.stop(t+.14);
-      // klik noise pendek: kedengeran di speaker HP yang ga bisa bunyiin bass
+      // [rasio frekuensi, kekerasan, lama meluruh]: rasio tak-bulat = karakter lonceng; overtone atas meluruh lebih cepat
+      [[1,1,1],[1.004,.45,.9],[2.756,.5,.5],[5.404,.24,.28],[8.933,.1,.16]].forEach(([r,a,dc])=>{
+        if(f*r>9000)return;
+        const o=ctx.createOscillator(),e=ctx.createGain(),dd=d*dc;
+        o.type='sine';o.frequency.value=f*r;
+        e.gain.setValueAtTime(.0001,t);e.gain.linearRampToValueAtTime(g*a*.45,t+.002);e.gain.exponentialRampToValueAtTime(.0001,t+dd);
+        o.connect(e);e.connect(out);o.start(t);o.stop(t+dd+.05)});
+      // 'tink' kecil di awal: klik noise tipis frekuensi tinggi (kerasa kayak ketukan kaca)
       if(!nz){nz=ctx.createBuffer(1,Math.floor(ctx.sampleRate*.05),ctx.sampleRate);const dd=nz.getChannelData(0);for(let n=0;n<dd.length;n++)dd[n]=(Math.random()*2-1)*Math.pow(1-n/dd.length,2)}
-      const s=ctx.createBufferSource(),bp=ctx.createBiquadFilter(),ec=ctx.createGain();
-      s.buffer=nz;bp.type='bandpass';bp.frequency.value=1800+k*500;bp.Q.value=.9;
-      ec.gain.setValueAtTime(g*.5,t);ec.gain.exponentialRampToValueAtTime(.0001,t+.03);
-      s.connect(bp);bp.connect(ec);ec.connect(out);s.start(t)}
+      const s=ctx.createBufferSource(),hp=ctx.createBiquadFilter(),ec=ctx.createGain();
+      s.buffer=nz;hp.type='highpass';hp.frequency.value=3500;
+      ec.gain.setValueAtTime(g*.5,t);ec.gain.exponentialRampToValueAtTime(.0001,t+.02);
+      s.connect(hp);hp.connect(ec);ec.connect(out);s.start(t);
+      // thump super halus biar tetap kerasa 'kena' (bukan cuma denting)
+      const th=ctx.createOscillator(),te=ctx.createGain();
+      th.type='sine';th.frequency.setValueAtTime(160,t);th.frequency.exponentialRampToValueAtTime(70,t+.06);
+      te.gain.setValueAtTime(.0001,t);te.gain.linearRampToValueAtTime(g*.16,t+.003);te.gain.exponentialRampToValueAtTime(.0001,t+.08);
+      th.connect(te);te.connect(out);th.start(t);th.stop(t+.1)}
   };
 
   // dipakai komponen lain di halaman (mis. kartu melayang)
