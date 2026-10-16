@@ -9,7 +9,7 @@
   try{Object.assign(st,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){}
   const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}};
 
-  let ctx,sfxBus,musBus,delayIn,verbIn,timer=null,step=0,next=0;
+  let ctx,sfxBus,musBus,delayIn,verbIn,timer=null,step=0,next=0,nz=null;
   const hz=n=>440*Math.pow(2,(n-69)/12);
 
   function ensure(){
@@ -63,14 +63,24 @@
     pick(){const t=ctx.currentTime;note(hz(76),t,.07,{type:'triangle',g:.1,dest:sfxBus})},
     drop(){const t=ctx.currentTime;note(hz(67),t,.1,{type:'triangle',g:.1,dest:sfxBus})},
     zoom(s){const t=ctx.currentTime;note(hz(62+(s-.6)*10),t,.07,{type:'triangle',g:.08,dest:sfxBus,lp:2600})},
-    bounce(v){const t=ctx.currentTime,o=ctx.createOscillator(),e=ctx.createGain(),g=Math.min(.38,.04+v*.12);
-      o.type='sine';o.frequency.setValueAtTime(200+v*40,t);o.frequency.exponentialRampToValueAtTime(65,t+.13);
-      e.gain.setValueAtTime(.0001,t);e.gain.linearRampToValueAtTime(g,t+.005);e.gain.exponentialRampToValueAtTime(.0001,t+.17);
-      o.connect(e);e.connect(sfxBus);o.start(t);o.stop(t+.2)}
+    // mantul: thump rendah + klik noise + ping tipis (bass doang ga kedengeran di speaker HP). Volume ikut kerasnya tabrakan, pan ikut posisi kartu.
+    bounce(v,pan){const t=ctx.currentTime,k=Math.min(v||0,2),g=Math.min(.85,.14+k*.45);
+      let out=sfxBus;
+      if(ctx.createStereoPanner){const p=ctx.createStereoPanner();p.pan.value=Math.max(-1,Math.min(1,(pan||0)*.7));p.connect(sfxBus);out=p}
+      const o=ctx.createOscillator(),e=ctx.createGain();
+      o.type='sine';o.frequency.setValueAtTime(210+k*50,t);o.frequency.exponentialRampToValueAtTime(70,t+.12);
+      e.gain.setValueAtTime(.0001,t);e.gain.linearRampToValueAtTime(g,t+.004);e.gain.exponentialRampToValueAtTime(.0001,t+.18);
+      o.connect(e);e.connect(out);o.start(t);o.stop(t+.2);
+      if(!nz){nz=ctx.createBuffer(1,Math.floor(ctx.sampleRate*.05),ctx.sampleRate);const d=nz.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2)}
+      const s=ctx.createBufferSource(),bp=ctx.createBiquadFilter(),ec=ctx.createGain();
+      s.buffer=nz;bp.type='bandpass';bp.frequency.value=1500+k*500;bp.Q.value=.9;
+      ec.gain.setValueAtTime(g*.9,t);ec.gain.exponentialRampToValueAtTime(.0001,t+.045);
+      s.connect(bp);bp.connect(ec);ec.connect(out);s.start(t);
+      note(hz(84),t,.12,{type:'triangle',g:g*.22,dest:out,lp:3200})}
   };
 
   // dipakai komponen lain di halaman (mis. kartu melayang)
-  window.azmSfx=(n,a)=>{if(st.sfx&&S[n]){ensure();S[n](a)}};
+  window.azmSfx=(n,a,b)=>{if(st.sfx&&S[n]){ensure();S[n](a,b)}};
 
   document.addEventListener('click',e=>{
     if(!st.sfx)return;
@@ -144,6 +154,10 @@
     };
     evs.forEach(v=>addEventListener(v,go,true));
   }
+
+  // buka kunci audio di gesture pertama (iOS/Safari butuh ini); tanpa ini sfx kartu bisa diam kalau musik dimatikan
+  const UE=['pointerdown','touchend','click','keydown'],unlock=()=>{UE.forEach(v=>removeEventListener(v,unlock,true));if(st.sfx||st.music)ensure()};
+  UE.forEach(v=>addEventListener(v,unlock,true));
 
   // hemat baterai: berhenti saat tab disembunyikan
   document.addEventListener('visibilitychange',()=>{
