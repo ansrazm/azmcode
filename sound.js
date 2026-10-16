@@ -9,7 +9,8 @@
   try{Object.assign(st,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){}
   const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}};
 
-  let ctx,sfxBus,musBus,delayIn,verbIn,timer=null,step=0,next=0,nz=null;
+  let ctx,sfxBus,musBus,delayIn,verbIn,timer=null,step=0,next=0,nz=null,bn=-1;
+  const BN=[69,72,74,76,79,81]; // nada 'tuing': pentatonik A minor
   const hz=n=>440*Math.pow(2,(n-69)/12);
 
   function ensure(){
@@ -63,20 +64,36 @@
     pick(){const t=ctx.currentTime;note(hz(76),t,.07,{type:'triangle',g:.1,dest:sfxBus})},
     drop(){const t=ctx.currentTime;note(hz(67),t,.1,{type:'triangle',g:.1,dest:sfxBus})},
     zoom(s){const t=ctx.currentTime;note(hz(62+(s-.6)*10),t,.07,{type:'triangle',g:.08,dest:sfxBus,lp:2600})},
-    // mantul: thump rendah + klik noise + ping tipis (bass doang ga kedengeran di speaker HP). Volume ikut kerasnya tabrakan, pan ikut posisi kartu.
-    bounce(v,pan){const t=ctx.currentTime,k=Math.min(v||0,2),g=Math.min(.85,.14+k*.45);
+    // mantul = "tuing" pegas: nada nyentak naik (tu-) lalu meluncur turun ke nada akhir sambil bergetar (-ing), plus thump + klik kecil biar berbobot.
+    // Nada akhir diacak dari pentatonik A minor (nyambung sama musik), ga pernah sama 2x berturut-turut. Volume ikut kerasnya tabrakan, pan ikut posisi kartu.
+    bounce(v,pan){const t=ctx.currentTime,k=Math.min(v||0,2),g=Math.min(.8,.08+k*.5),d=.38+k*.14;
       let out=sfxBus;
       if(ctx.createStereoPanner){const p=ctx.createStereoPanner();p.pan.value=Math.max(-1,Math.min(1,(pan||0)*.7));p.connect(sfxBus);out=p}
-      const o=ctx.createOscillator(),e=ctx.createGain();
-      o.type='sine';o.frequency.setValueAtTime(210+k*50,t);o.frequency.exponentialRampToValueAtTime(70,t+.12);
-      e.gain.setValueAtTime(.0001,t);e.gain.linearRampToValueAtTime(g,t+.004);e.gain.exponentialRampToValueAtTime(.0001,t+.18);
-      o.connect(e);e.connect(out);o.start(t);o.stop(t+.2);
-      if(!nz){nz=ctx.createBuffer(1,Math.floor(ctx.sampleRate*.05),ctx.sampleRate);const d=nz.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2)}
+      let i;do{i=Math.floor(Math.random()*BN.length)}while(i===bn&&BN.length>1);bn=i;const f=hz(BN[i]);
+      // badan nada: triangle + harmonik sine di atasnya
+      const o=ctx.createOscillator(),o2=ctx.createOscillator(),e=ctx.createGain(),e2=ctx.createGain();
+      o.type='triangle';o2.type='sine';
+      o.frequency.setValueAtTime(f*.62,t);o.frequency.exponentialRampToValueAtTime(f*1.55,t+.035);o.frequency.exponentialRampToValueAtTime(f,t+.16);
+      o2.frequency.setValueAtTime(f*1.24,t);o2.frequency.exponentialRampToValueAtTime(f*3.1,t+.035);o2.frequency.exponentialRampToValueAtTime(f*2,t+.16);
+      // getaran pegas (vibrato) yang meluruh
+      const lfo=ctx.createOscillator(),lg=ctx.createGain();
+      lfo.frequency.value=11;lg.gain.setValueAtTime(5,t);lg.gain.linearRampToValueAtTime(45,t+.1);lg.gain.linearRampToValueAtTime(0,t+d);
+      lfo.connect(lg);lg.connect(o.detune);lg.connect(o2.detune);
+      e.gain.setValueAtTime(.0001,t);e.gain.linearRampToValueAtTime(g,t+.006);e.gain.exponentialRampToValueAtTime(g*.35,t+.12);e.gain.exponentialRampToValueAtTime(.0001,t+d);
+      e2.gain.setValueAtTime(.0001,t);e2.gain.linearRampToValueAtTime(g*.28,t+.006);e2.gain.exponentialRampToValueAtTime(.0001,t+d*.55);
+      o.connect(e);o2.connect(e2);e.connect(out);e2.connect(out);
+      o.start(t);o2.start(t);lfo.start(t);o.stop(t+d+.05);o2.stop(t+d+.05);lfo.stop(t+d+.05);
+      // thump rendah: bobot tabrakan
+      const th=ctx.createOscillator(),te=ctx.createGain();
+      th.type='sine';th.frequency.setValueAtTime(170+k*40,t);th.frequency.exponentialRampToValueAtTime(60,t+.09);
+      te.gain.setValueAtTime(.0001,t);te.gain.linearRampToValueAtTime(g*.7,t+.004);te.gain.exponentialRampToValueAtTime(.0001,t+.12);
+      th.connect(te);te.connect(out);th.start(t);th.stop(t+.14);
+      // klik noise pendek: kedengeran di speaker HP yang ga bisa bunyiin bass
+      if(!nz){nz=ctx.createBuffer(1,Math.floor(ctx.sampleRate*.05),ctx.sampleRate);const dd=nz.getChannelData(0);for(let n=0;n<dd.length;n++)dd[n]=(Math.random()*2-1)*Math.pow(1-n/dd.length,2)}
       const s=ctx.createBufferSource(),bp=ctx.createBiquadFilter(),ec=ctx.createGain();
-      s.buffer=nz;bp.type='bandpass';bp.frequency.value=1500+k*500;bp.Q.value=.9;
-      ec.gain.setValueAtTime(g*.9,t);ec.gain.exponentialRampToValueAtTime(.0001,t+.045);
-      s.connect(bp);bp.connect(ec);ec.connect(out);s.start(t);
-      note(hz(84),t,.12,{type:'triangle',g:g*.22,dest:out,lp:3200})}
+      s.buffer=nz;bp.type='bandpass';bp.frequency.value=1800+k*500;bp.Q.value=.9;
+      ec.gain.setValueAtTime(g*.5,t);ec.gain.exponentialRampToValueAtTime(.0001,t+.03);
+      s.connect(bp);bp.connect(ec);ec.connect(out);s.start(t)}
   };
 
   // dipakai komponen lain di halaman (mis. kartu melayang)
