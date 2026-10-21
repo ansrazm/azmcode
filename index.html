@@ -288,7 +288,7 @@ footer{padding-bottom:84px}
 
   <div class="stats"><div class="wrap sg">
     <div class="stat"><b data-n="10" data-s="+">0</b><span>vulnerabilities documented in OWASP-based assessments</span></div>
-    <div class="stat"><b data-n="4">0</b><span>projects shipped, most of them live</span></div>
+    <div class="stat"><b data-n="5">0</b><span>projects shipped, most of them live</span></div>
     <div class="stat"><b data-n="99.99" data-s="%" data-d="2">0</b><span>offline accuracy in our published DDoS research, then tested on a live network</span></div>
     <div class="stat"><b data-n="2">0</b><span>BNSP certifications: Network Administrator and Web Developer</span></div>
   </div></div>
@@ -341,12 +341,13 @@ const rm=matchMedia('(prefers-reduced-motion:reduce)').matches,fine=matchMedia('
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const ms=u=>'https://s0.wp.com/mshots/v1/'+encodeURIComponent(u)+'?w=900&h=560';
 const SVC=[
-['Websites and online stores','Sites, stores and custom CMS built from scratch on Cloudflare Workers or Node.js, with member dashboards, checkout, and payment gateways such as Tripay and Duitku. WordPress/WooCommerce when it suits the client better.',['Cloudflare Workers','D1','Node.js','Custom CMS','Tripay','Duitku','Member dashboards','WordPress','WooCommerce']],
+['Websites and online stores','Company-profile sites, stores and custom CMS built from scratch on Cloudflare Workers or Node.js, with member dashboards, checkout, and payment gateways such as Tripay and Duitku. WordPress/WooCommerce when it suits the client better.',['Cloudflare Workers','D1','Node.js','Custom CMS','Tripay','Duitku','Member dashboards','WordPress','WooCommerce']],
 ['Web apps','Node.js and React tools: online exam systems and admin panels with a REST API behind them.',['Node.js','Express','React','REST API','Vercel','Google Apps Script']],
 ['Security assessments','An OWASP Top 10 review of your web application, delivered as a written list of findings with how to fix each one.',['OWASP Top 10','NIST framework','Vulnerability reports','Linux hardening']],
 ['Machine learning','Classification models with explainable results (SHAP), validated on real data instead of benchmark scores alone.',['Python','Scikit-Learn','XGBoost','SHAP','Pandas']]];
 const PRJ=[
 {t:'web',w:1,n:'Dragon Store',d:'Game top-up and in-game item store on Cloudflare Workers and D1. Member accounts with wallet balance and VIP pricing, flash sales, Google login, Tripay and Duitku payments, automatic order fulfilment through Digiflazz, and an admin panel with image uploads.',g:['Cloudflare Workers','D1','Payments'],u:'https://dragonstorepb.com',s:ms('https://dragonstorepb.com'),a:'Visit the live store'},
+{t:'web',n:'Taqiyuddin Amri, CA, CGAA',d:'Profile and services website for a chartered accountant serving SMEs, companies and government agencies. Four pages in Indonesian (home, services, expert team, contact), team profile modals, and a contact form that sends the inquiry straight to WhatsApp. Mobile-first and deployed on Vercel.',g:['HTML / CSS / JS','Vercel','WhatsApp form'],u:'https://taqiyuddinamri.vercel.app',s:ms('https://taqiyuddinamri.vercel.app'),a:'Visit the live site'},
 {t:'web',n:'BUMDes Langgam Sako',d:'Batik tenun online store for a village-owned enterprise in Bengkalis, with direct WhatsApp ordering. Live for 3 years, including hosting and custom domain setup. The domain and hosting have since expired.',g:['WordPress','WooCommerce'],u:'https://azmporto.vercel.app/#projects',s:'',a:'See the project in my portfolio'},
 {t:'app',n:'Online Exam Platform',d:'Exam portal for institutions: sessions open and close on a schedule, participants check in with name and ID, leaving the page is logged and locks the session after a set limit, and a supervisor dashboard offers per-exam controls and CSV export.',g:['JavaScript','Apps Script','Vercel'],u:'https://ujian-unri.vercel.app',s:ms('https://ujian-unri.vercel.app'),a:'Open the live demo'},
 {t:'research',n:'Explainable DDoS detection',d:'Published in JOSAPEN 2026. XGBoost vs Random Forest on CIC-DDoS2019, then tested on a physical network where false positives still appeared.',g:['XGBoost','SHAP','Python'],u:'https://journal.lenterailmu.com/index.php/josapen/article/view/131',s:ms('https://journal.lenterailmu.com/index.php/josapen/article/view/131'),a:'Read the paper'}];
